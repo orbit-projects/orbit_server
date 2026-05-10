@@ -6,6 +6,15 @@ from orbit_types import ResponseModel
 
 
 async def parse_request(request: Request):
+    """
+    Parse the incoming HTTP request body as JSON.
+
+    Args:
+        request (Request): The incoming Starlette request object.
+
+    Returns:
+        dict: Parsed JSON body if successful, otherwise an empty dictionary.
+    """
     try:
         return await request.json()
     except Exception:
@@ -13,6 +22,17 @@ async def parse_request(request: Request):
 
 
 def to_response(result):
+    """
+    Convert a handler result into a Starlette Response.
+
+    This function standardizes different return types into a proper HTTP response.
+
+    Args:
+        result: The result returned by a route handler.
+
+    Returns:
+        Response: A Starlette response object.
+    """
     if isinstance(result, Response):
         return result
 
@@ -24,7 +44,18 @@ def to_response(result):
 
     return JSONResponse({"data": result})
 
+
 def error_response(error: Exception, debug=False):
+    """
+    Generate a standardized error response.
+
+    Args:
+        error (Exception): The exception that occurred.
+        debug (bool): Whether to include detailed error messages.
+
+    Returns:
+        JSONResponse: A formatted error response with appropriate status code.
+    """
     if isinstance(error, OrbitError):
         return JSONResponse(
             {
@@ -44,6 +75,15 @@ def error_response(error: Exception, debug=False):
 
 
 def format_validation_errors(errors):
+    """
+    Format validation errors into a standardized structure.
+
+    Args:
+        errors (list): A list of validation error dictionaries.
+
+    Returns:
+        list: A list of formatted error objects containing field, message, and type.
+    """
     return [
         {
             "field": ".".join(map(str, e["loc"])),

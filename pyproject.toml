@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "orbit-server"
-version = "0.1.0"
+name = "orbit-framework-server"
+version = "0.1.1"
 description = "ASGI server integration layer for Orbit (Starlette-based)"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,20 +19,33 @@ license = { text = "MIT" }
 dependencies = [
     "starlette>=0.37",
     "uvicorn>=0.30",
-    "orbit-core>=0.1.0",
-    "orbit-types>=0.1.0"
+    "orbit-framework-core>=0.1.0",
+    "orbit-framework-types>=0.1.0"
 ]
 
 keywords = ["orbit", "server", "asgi", "starlette"]
 
 classifiers = [
+    "Development Status :: 3 - Alpha",
+
+    "Intended Audience :: Developers",
+
+    "License :: OSI Approved :: MIT License",
+
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+
     "Operating System :: OS Independent",
+
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+
+    "Typing :: Typed",
 ]
 
-
-# 🔥 CRITICAL (package discovery)
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["orbit_server*"]

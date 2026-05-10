@@ -1,6 +1,19 @@
 import inspect
 
 def generate_openapi(app):
+    """
+    Generate an OpenAPI specification from the application's routes.
+
+    This function iterates over all registered routes in the app and constructs
+    an OpenAPI 3.0-compliant schema including paths, methods, request bodies,
+    and response schemas (if available).
+
+    Args:
+        app: The application instance that provides a `get_routes()` method.
+
+    Returns:
+        dict: A dictionary representing the OpenAPI specification.
+    """
     paths = {}
 
     for route in app.get_routes():
