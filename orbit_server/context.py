@@ -1,70 +1,95 @@
-from starlette.requests import Request
+"""
+Orbit Request Context
+
+Provides request-scoped execution state used
+throughout the Orbit runtime.
+
+This module exposes the public API for:
+
+- Request-scoped state
+- Dependency cache storage
+- Execution metadata
+- Shared request context handling
+
+Exports:
+    RequestContext:
+        Stores request-scoped execution data.
+"""
+
+from orbit_types import RequestModel
 
 
 class RequestContext:
     """
-    A wrapper around the Starlette Request object providing
-    convenient access to commonly used request data.
+    Represents request-scoped execution state.
 
-    This abstraction simplifies handler logic by exposing
-    frequently accessed properties in a clean interface.
+    The request context is shared across middleware,
+    handlers, and runtime execution systems during
+    a request lifecycle.
+
+    Attributes:
+        request:
+            Incoming normalized request model.
+
+        request_cache:
+            Request-scoped dependency cache.
+
+        state:
+            Shared mutable request state.
     """
 
-    def __init__(self, request: Request):
+    def __init__(
+        self,
+        request: RequestModel,
+    ):
         """
-        Initialize the request context.
+        Initialize request context.
 
         Args:
-            request (Request): The incoming Starlette request object.
+            request:
+                Incoming request model.
         """
+
         self.request = request
 
-    @property
-    def headers(self):
+        self.request_cache: dict = {}
+        self.state: dict = {}
+
+    def set(
+        self,
+        key: str,
+        value,
+    ) -> None:
         """
-        Get request headers as a dictionary.
+        Store request-scoped state.
+
+        Args:
+            key:
+                State key.
+
+            value:
+                State value.
+        """
+
+        self.state[key] = value
+
+    def get(
+        self,
+        key: str,
+        default=None,
+    ):
+        """
+        Retrieve request-scoped state.
+
+        Args:
+            key:
+                State key.
+
+            default:
+                Fallback value.
 
         Returns:
-            dict: Request headers.
+            Stored state value.
         """
-        return dict(self.request.headers)
 
-    @property
-    def query_params(self):
-        """
-        Get query parameters as a dictionary.
-
-        Returns:
-            dict: Query parameters from the request URL.
-        """
-        return dict(self.request.query_params)
-
-    @property
-    def method(self):
-        """
-        Get the HTTP method of the request.
-
-        Returns:
-            str: HTTP method (e.g., GET, POST).
-        """
-        return self.request.method
-
-    @property
-    def path(self):
-        """
-        Get the request path.
-
-        Returns:
-            str: URL path of the request.
-        """
-        return self.request.url.path
-
-    @property
-    def client_ip(self):
-        """
-        Get the client's IP address.
-
-        Returns:
-            str | None: The client's IP address if available, otherwise None.
-        """
-        return self.request.client.host if self.request.client else None
+        return self.state.get(key, default)

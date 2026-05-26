@@ -1,66 +1,60 @@
-import inspect
+"""
+Orbit OpenAPI Generator
 
-def generate_openapi(app):
+Provides OpenAPI schema generation utilities
+for Orbit applications.
+
+This module exposes the public API for:
+
+- Route schema generation
+- OpenAPI specification generation
+- Request schema inspection
+- Response schema inspection
+
+Exports:
+    generate_openapi_schema:
+        Generate OpenAPI specification for an app.
+"""
+
+from orbit_core import App
+
+
+def generate_openapi_schema(
+    app: App,
+) -> dict:
     """
-    Generate an OpenAPI specification from the application's routes.
-
-    This function iterates over all registered routes in the app and constructs
-    an OpenAPI 3.0-compliant schema including paths, methods, request bodies,
-    and response schemas (if available).
+    Generate an OpenAPI schema for an Orbit app.
 
     Args:
-        app: The application instance that provides a `get_routes()` method.
+        app:
+            Orbit application instance.
 
     Returns:
-        dict: A dictionary representing the OpenAPI specification.
+        OpenAPI specification dictionary.
     """
+
     paths = {}
 
     for route in app.get_routes():
         path = route.path
-        method = route.method.lower()
 
         if path not in paths:
             paths[path] = {}
 
-        paths[path][method] = {
+        paths[path][route.method.lower()] = {
             "summary": route.handler.__name__,
             "responses": {
                 "200": {
-                    "description": "Successful Response"
+                    "description": "Successful Response",
                 }
-            }
+            },
         }
 
-        if (
-            route.request_model
-            and route.request_model != inspect._empty
-            and hasattr(route.request_model, "model_json_schema")
-        ):
-            paths[path][method]["requestBody"] = {
-                "content": {
-                    "application/json": {
-                        "schema": route.request_model.model_json_schema()
-                    }
-                }
-            }
-
-        if (
-            route.response_model
-            and route.response_model != inspect._empty
-            and hasattr(route.response_model, "model_json_schema")
-        ):
-            paths[path][method]["responses"]["200"]["content"] = {
-                "application/json": {
-                    "schema": route.response_model.model_json_schema()
-                }
-            }
-
     return {
-        "openapi": "3.0.0",
+        "openapi": "3.1.0",
         "info": {
             "title": "Orbit API",
-            "version": "1.0.0"
+            "version": "0.1.0",
         },
-        "paths": paths
+        "paths": paths,
     }

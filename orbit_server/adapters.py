@@ -1,94 +1,72 @@
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+"""
+Orbit Adapter System
 
-from orbit_types.exceptions import OrbitError
-from orbit_types import ResponseModel
+Provides backend adapter abstractions used to connect
+Orbit applications to external runtimes.
+
+This module exposes the public API for:
+
+- Runtime adapters
+- Request conversion
+- Response conversion
+- Backend integration
+
+Exports:
+    BaseAdapter:
+        Base adapter abstraction for Orbit runtimes.
+"""
+
+from abc import ABC
+from abc import abstractmethod
+
+from orbit_core import App
+from orbit_types import (
+    RequestModel,
+    ResponseModel,
+)
 
 
-async def parse_request(request: Request):
+class BaseAdapter(ABC):
     """
-    Parse the incoming HTTP request body as JSON.
+    Base runtime adapter abstraction.
 
-    Args:
-        request (Request): The incoming Starlette request object.
-
-    Returns:
-        dict: Parsed JSON body if successful, otherwise an empty dictionary.
+    Adapters are responsible for translating
+    external runtime behavior into Orbit-compatible
+    request and response models.
     """
-    try:
-        return await request.json()
-    except Exception:
-        return {}
 
+    def __init__(
+        self,
+        app: App,
+    ):
+        """
+        Initialize adapter.
 
-def to_response(result):
-    """
-    Convert a handler result into a Starlette Response.
+        Args:
+            app:
+                Orbit application instance.
+        """
 
-    This function standardizes different return types into a proper HTTP response.
+        self.app = app
 
-    Args:
-        result: The result returned by a route handler.
+    @abstractmethod
+    async def handle_request(
+        self,
+        request: RequestModel,
+    ) -> ResponseModel:
+        """
+        Handle an incoming request.
 
-    Returns:
-        Response: A Starlette response object.
-    """
-    if isinstance(result, Response):
-        return result
+        Args:
+            request:
+                Normalized request model.
 
-    if isinstance(result, ResponseModel):
-        return JSONResponse(result.to_dict())
+        Returns:
+            Normalized response model.
+        """
 
-    if isinstance(result, dict):
-        return JSONResponse(result)
-
-    return JSONResponse({"data": result})
-
-
-def error_response(error: Exception, debug=False):
-    """
-    Generate a standardized error response.
-
-    Args:
-        error (Exception): The exception that occurred.
-        debug (bool): Whether to include detailed error messages.
-
-    Returns:
-        JSONResponse: A formatted error response with appropriate status code.
-    """
-    if isinstance(error, OrbitError):
-        return JSONResponse(
-            {
-                "error": "validation_error",
-                "details": format_validation_errors(error.args[0])
-            },
-            status_code=400,
-        )
-
-    return JSONResponse(
-        {
-            "error": "internal_server_error",
-            "message": str(error) if debug else "Something went wrong",
-        },
-        status_code=500,
-    )
-
-
-def format_validation_errors(errors):
-    """
-    Format validation errors into a standardized structure.
-
-    Args:
-        errors (list): A list of validation error dictionaries.
-
-    Returns:
-        list: A list of formatted error objects containing field, message, and type.
-    """
-    return [
-        {
-            "field": ".".join(map(str, e["loc"])),
-            "message": e["msg"],
-            "type": e["type"],
-        }
-        for e in errors
-    ]
+    @abstractmethod
+    async def start(self) -> None:
+        """
+        Start adapter runtime.
+        """

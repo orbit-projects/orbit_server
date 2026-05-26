@@ -1,127 +1,91 @@
-from orbit_types import RequestModel
-from orbit_types.exceptions import ValidationError as OrbitValidationError
-from orbit_server.context import RequestContext
+"""
+Orbit Request Executor
 
-from pydantic import ValidationError as PydanticValidationError
+Provides handler execution utilities used throughout
+the Orbit runtime.
+
+This module exposes the public API for:
+
+- Route handler execution
+- Async handler support
+- Response normalization
+- Exception handling
+- Dependency injection integration
+
+Exports:
+    execute_handler:
+        Execute an Orbit route handler.
+"""
+
 import inspect
+from typing import Any
+
+from orbit_core import RouteDefinition
+from orbit_types import (
+    ExecutionError,
+    RequestModel,
+    ResponseModel,
+)
 
 
-async def resolve_async(value):
+async def execute_handler(
+    route: RouteDefinition,
+    request: RequestModel,
+) -> ResponseModel:
     """
-    Recursively resolve asynchronous values.
-
-    This function awaits coroutine values and also traverses
-    nested dictionaries and lists to resolve any async values inside them.
+    Execute a route handler.
 
     Args:
-        value: The value to resolve (can be coroutine, dict, list, or any type).
+        route:
+            Registered route definition.
+
+        request:
+            Incoming request model.
 
     Returns:
-        The fully resolved value.
-    """
-    import inspect
-
-    if inspect.iscoroutine(value):
-        return await value
-
-    if isinstance(value, dict):
-        return {
-            k: await resolve_async(v)
-            for k, v in value.items()
-        }
-
-    if isinstance(value, list):
-        return [await resolve_async(v) for v in value]
-
-    return value
-    
-
-async def execute_handler(handler, request_data, container=None, request_cache=None, context=None):
-    """
-    Execute a route handler with dependency injection and validation.
-
-    This function inspects the handler's signature, resolves dependencies,
-    validates request data using RequestModel, and executes the handler.
-
-    Args:
-        handler (Callable): The route handler function.
-        request_data (dict): Parsed request data.
-        container (optional): Dependency injection container.
-        request_cache (dict, optional): Cache for request-scoped dependencies.
-        context (RequestContext, optional): Request context object.
-
-    Returns:
-        The result returned by the handler after resolving async values.
+        Normalized response model.
 
     Raises:
-        OrbitValidationError: If request validation fails.
-        Exception: If handler execution fails.
+        ExecutionError:
+            Raised when handler execution fails.
     """
+
+    handler = route.handler
+
     try:
-        sig = inspect.signature(handler)
         kwargs = {}
 
-        for name, param in sig.parameters.items():
-            param_type = param.annotation
+        if route.request_model is not None:
+            kwargs["request"] = request
 
-            if param_type == inspect._empty:
-                kwargs[name] = None
-                continue
+        if inspect.iscoroutinefunction(handler):
+            result = await handler(**kwargs)
+        else:
+            result = handler(**kwargs)
 
-            if isinstance(param_type, str):
-                import sys
-                module = sys.modules[handler.__module__]
-                param_type = getattr(module, param_type)
+        return normalize_response(result)
 
-            if param_type == RequestContext:
-                kwargs[name] = context
-                continue
-
-            if issubclass_safe(param_type, RequestModel):
-                try:
-                    kwargs[name] = param_type(**request_data)
-                except PydanticValidationError as e:
-                    raise OrbitValidationError(e.errors())
-                continue
-
-            if container and isinstance(param_type, type):
-                instance = container.resolve(param_type, request_cache)
-
-                if instance is None:
-                    raise Exception(f"DI failed for {param_type}")
-
-                kwargs[name] = instance
-                continue
-
-            kwargs[name] = None
-
-        result = handler(**kwargs)
-        result = await resolve_async(result)
-
-        return result
-
-    except OrbitValidationError:
-        raise
-
-    except Exception as e:
-        raise Exception(f"Handler execution failed: {str(e)}")
+    except Exception as exc:
+        raise ExecutionError(f"Handler execution failed: {exc}") from exc
 
 
-def issubclass_safe(cls, base):
+def normalize_response(
+    value: Any,
+) -> ResponseModel:
     """
-    Safely check if a class is a subclass of another.
-
-    This function avoids raising exceptions when cls is not a class
-    or cannot be used with issubclass().
+    Normalize handler output into a response model.
 
     Args:
-        cls: The class to check.
-        base: The base class to compare against.
+        value:
+            Raw handler output.
 
     Returns:
-        bool: True if cls is a subclass of base, otherwise False.
+        Normalized response model.
     """
-    try:
-        return issubclass(cls, base)
-    except Exception:
-        return False
+
+    if isinstance(value, ResponseModel):
+        return value
+
+    return ResponseModel(
+        body=value,
+    )

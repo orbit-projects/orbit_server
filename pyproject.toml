@@ -1,59 +1,42 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = [
+  "setuptools>=69",
+  "wheel",
+]
 build-backend = "setuptools.build_meta"
 
 
 [project]
 name = "orbit-framework-server"
-version = "0.1.1"
-description = "ASGI server integration layer for Orbit (Starlette-based)"
+version = "0.2.0"
+description = "Backend server runtime for Orbit"
 readme = "README.md"
-requires-python = ">=3.11"
-
-authors = [
-    { name = "Pranav Manglik" }
-]
-
+requires-python = ">=3.12"
 license = { text = "MIT" }
 
-dependencies = [
-    "starlette>=0.37",
-    "uvicorn>=0.30",
-    "orbit-framework-core>=0.1.0",
-    "orbit-framework-types>=0.1.0"
+authors = [
+  { name = "Pranav Manglik" }
 ]
 
-keywords = ["orbit", "server", "asgi", "starlette"]
+keywords = [
+  "orbit",
+  "framework",
+  "server",
+  "asgi",
+]
 
 classifiers = [
-    "Development Status :: 3 - Alpha",
-
-    "Intended Audience :: Developers",
-
-    "License :: OSI Approved :: MIT License",
-
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-
-    "Operating System :: OS Independent",
-
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
-
-    "Typing :: Typed",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
 ]
+
+dependencies = [
+  "orbit-framework-core>=0.2.0",
+  "uvicorn>=0.30.0",
+]
+
 
 [tool.setuptools.packages.find]
-where = ["."]
 include = ["orbit_server*"]
-
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "black",
-    "ruff"
-]

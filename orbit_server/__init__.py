@@ -1,10 +1,23 @@
 """
-Public API for the server module.
+Orbit Server Package
 
-This module exposes the main application factory function
-used to create a Starlette app instance.
+Backend execution and runtime orchestration layer
+for Orbit applications.
+
+This package exposes the public API for:
+
+- Request context handling
+- Runtime execution
+- Adapter integrations
+- OpenAPI generation
+
+Exports:
+    RequestContext:
+        Stores contextual request information during execution.
 """
 
-from .server import create_starlette_app
+from .context import RequestContext
 
-__all__ = ["create_starlette_app"]
+__all__ = [
+    "RequestContext",
+]
